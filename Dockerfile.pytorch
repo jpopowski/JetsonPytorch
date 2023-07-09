@@ -185,3 +185,24 @@ RUN pip3 install --no-cache-dir --verbose pycuda six
 #	head /usr/local/lib/python3.8/dist-packages/torch/version.py; \
 #	head /usr/local/lib/python3.8/dist-packages/torch-2.0.0.nv23.05.dist-info/METADATA; \
 #    fi
+
+
+#
+# JupyterLab
+#
+RUN curl -sL https://deb.nodesource.com/setup_10.x | bash - && \
+    apt-get update && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    pip3 install jupyter jupyterlab==2.2.9 --verbose && \
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager
+    
+RUN jupyter lab --generate-config
+RUN python3 -c "from notebook.auth.security import set_password; set_password('nvidia', '/root/.jupyter/jupyter_notebook_config.json')"
+
+CMD /bin/bash -c "jupyter lab --ip 0.0.0.0 --port 8888 --allow-root &> /var/log/jupyter.log" & \
+	echo "allow 10 sec for JupyterLab to start @ http://$(hostname -I | cut -d' ' -f1):8888 (password nvidia)" && \
+	echo "JupterLab logging location:  /var/log/jupyter.log  (inside the container)" && \
+	/bin/bash
+
